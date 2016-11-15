@@ -44,20 +44,25 @@ void sayHello()
     Serial.println(micros());
     Serial.println();
 
-    uint8_t buf[1];
-    buf[0] = 1u;
+    float temparature;
+    if (g_temperature.MeasureStatus()) {
+        temparature = g_temperature.GetCelsius(0);
+        Serial.printf("Measurement %f \r\n", temparature);
+        g_temperature.StartMeasure();
+    } else {
+        temparature = NAN;
+        Serial.printf("Measurement failed \r\n");
+    }
+
+    uint8_t buf[3];
+    buf[0] = 0u;
+    knx_set_float16(&buf[1], temparature);
     knx_send_routing_indication( KNX_GROUP_ADDRESS(1,2,3)
                                , 0u
                                , KNX_APCI_VALUE_WRITE
                                , buf
                                , sizeof(buf));
 
-    if (g_temperature.MeasureStatus()) {
-        Serial.printf("Measurement %f \r\n", g_temperature.GetCelsius(0));
-        g_temperature.StartMeasure();
-    } else {
-        Serial.printf("Measurement failed \r\n");
-    }
 }
 
 void init()

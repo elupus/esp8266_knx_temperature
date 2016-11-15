@@ -62,6 +62,25 @@ void set_ipv4(char buf[4], const IPAddress& address)
     set_u08(&buf[3u], address[3]);
 }
 
+void knx_set_float16(uint8_t buf[2], float data)
+{
+    if (isnan(data)) {
+        set_u16((char*)buf, 0x7FFF);
+    } else {
+        int   exp;
+        float x = frexp(data, &exp);
+
+        union {
+            int16_t  s;
+            uint16_t u;
+        } m;
+        m.s  = (int16_t)(0.5f + x * 100.0f);
+        m.u &= 0b1000011111111111;
+        m.u |= exp << 11;
+        set_u16((char*)buf, m.u);
+    }
+}
+
 void set_hpai(char buf[8], const IPAddress& ip, uint16_t port)
 {
     set_u08(&buf[0u], 8u);                                 /* structure length */
