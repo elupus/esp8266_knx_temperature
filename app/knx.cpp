@@ -26,9 +26,9 @@
 #define KNX_CONFIG_DEVICE_HARDWARE         0u
 #define KNX_CONFIG_DEVICE_SERVICE_FAMILIES 0u
 
-void data_received(UdpConnection& connection, char *data, int size, IPAddress remoteIP, uint16_t remotePort);
+void knx_recieved_data(UdpConnection& connection, char *data, int size, IPAddress remoteIP, uint16_t remotePort);
 
-UdpConnection      g_udp(data_received);
+UdpConnection      g_udp(knx_recieved_data);
 IPAddress          g_target_address(224,   0, 23,  12);
 const unsigned int g_target_port = 3671;
 
@@ -119,7 +119,7 @@ void set_supported_service_familes(char buf[6])
     set_u08(&buf[ 5u], 5u); /* service family version */
 }
 
-void send_search_response(IPAddress ip, uint16 port)
+void knx_send_search_response(IPAddress ip, uint16 port)
 {
     char buf[74];
     /* ip header */
@@ -179,7 +179,7 @@ void knx_send_routing_indication(uint16_t target, uint8_t tpci, uint16_t apci, u
 }
 
 
-void service_routing_ind(char* data, int size)
+void knx_recieved_routing_ind(char* data, int size)
 {
     Serial.println("Routing indication");
 
@@ -192,7 +192,7 @@ void service_routing_ind(char* data, int size)
     }
 }
 
-void service_search_req(char* data, int size)
+void knx_recieved_search_req(char* data, int size)
 {
     Serial.println("Search request");
     uint8_t   res;
@@ -205,10 +205,10 @@ void service_search_req(char* data, int size)
         return;
     }
 
-    send_search_response(ip, port);
+    knx_send_search_response(ip, port);
 }
 
-void data_received(UdpConnection& connection, char *data, int size, IPAddress remoteIP, uint16_t remotePort)
+void knx_recieved_data(UdpConnection& connection, char *data, int size, IPAddress remoteIP, uint16_t remotePort)
 {
     Serial.print("data:");
     Serial.println(remoteIP.toString());
@@ -229,10 +229,10 @@ void data_received(UdpConnection& connection, char *data, int size, IPAddress re
 
     switch (get_u16(&data[2])) {
     case KNX_SERVICE_ROUTING_IND:
-        service_routing_ind(&data[6], size - 6u);
+        knx_recieved_routing_ind(&data[6], size - 6u);
         break;
     case KNX_SERVICE_SEARCH_REQ:
-        service_search_req(&data[6], size - 6u);
+        knx_recieved_search_req(&data[6], size - 6u);
         break;
     default:
         Serial.printf("Unknown service %x\r\n", get_u16(&data[2]));
