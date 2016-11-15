@@ -25,7 +25,7 @@ int helloCounter = 0;
 
 DS18S20            g_temperature;
 
-#define KNX_GROUPADDRESS_TEMPERATURE KNX_GROUP_ADDRESS(1,2,3)
+#define KNX_GROUPADDRESS_TEMPERATURE KNX_GROUP_ADDRESS(3,1,0)
 
 void networkOk()
 {
