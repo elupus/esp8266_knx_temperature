@@ -25,6 +25,8 @@ int helloCounter = 0;
 
 DS18S20            g_temperature;
 
+#define KNX_GROUPADDRESS_TEMPERATURE KNX_GROUP_ADDRESS(1,2,3)
+
 void networkOk()
 {
     Serial.println("Connected to wifi");
@@ -57,7 +59,7 @@ void sayHello()
     uint8_t buf[3];
     buf[0] = 0u;
     knx_set_float16(&buf[1], temparature);
-    knx_send_routing_indication( KNX_GROUP_ADDRESS(1,2,3)
+    knx_send_routing_indication( KNX_GROUPADDRESS_TEMPERATURE
                                , 0u
                                , KNX_APCI_VALUE_WRITE
                                , buf
