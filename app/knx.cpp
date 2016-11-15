@@ -138,6 +138,18 @@ void set_supported_service_familes(char buf[6])
     set_u08(&buf[ 5u], 5u); /* service family version */
 }
 
+void knx_send_group_write_f16(uint16 group, float val)
+{
+    uint8_t buf[3];
+    buf[0] = 0u;
+    knx_set_float16(&buf[1], val);
+    knx_send_routing_indication( group
+                            , 0u
+                            , KNX_APCI_VALUE_WRITE
+                            , buf
+                            , sizeof(buf));
+}
+
 void knx_send_search_response(IPAddress ip, uint16 port)
 {
     char buf[74];

@@ -56,15 +56,7 @@ void sayHello()
         Serial.printf("Measurement failed \r\n");
     }
 
-    uint8_t buf[3];
-    buf[0] = 0u;
-    knx_set_float16(&buf[1], temparature);
-    knx_send_routing_indication( KNX_GROUPADDRESS_TEMPERATURE
-                               , 0u
-                               , KNX_APCI_VALUE_WRITE
-                               , buf
-                               , sizeof(buf));
-
+    knx_send_group_write_f16(KNX_GROUPADDRESS_TEMPERATURE, temparature);
 }
 
 void init()
