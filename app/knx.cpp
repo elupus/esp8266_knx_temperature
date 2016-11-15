@@ -150,6 +150,17 @@ void knx_send_group_write_f16(uint16 group, float val)
                             , sizeof(buf));
 }
 
+void knx_send_group_write_u01_to_u07(uint16 group, uint8_t val)
+{
+    uint8_t buf[1];
+    buf[0] = val;
+    knx_send_routing_indication( group
+                            , 0u
+                            , KNX_APCI_VALUE_WRITE
+                            , buf
+                            , sizeof(buf));
+}
+
 void knx_send_search_response(IPAddress ip, uint16 port)
 {
     char buf[74];

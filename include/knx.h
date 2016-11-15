@@ -90,5 +90,6 @@
 void knx_init(void);
 void knx_send_routing_indication(uint16_t target, uint8_t tpci, uint16_t apci, uint8_t* data, uint8_t len);
 void knx_send_group_write_f16(uint16 group, float val);
+void knx_send_group_write_u01_to_u07(uint16 group, uint8_t val);
 
 #endif /* INCLUDE_KNX_H_ */
