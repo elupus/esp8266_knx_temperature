@@ -50,7 +50,7 @@ void networkOk()
 
 #define KNX_FIELD_HEADER_LEN 0x06u
 #define KNX_FIELD_HEADER_VER 0x10u
-#define KNX_ROUTING_COUNTER 6u /* fixed counter, since data originate on this device */
+#define KNX_FIELD_HOPCOUNT      6u
 
 #define KNX_CONFIG_DEVICE_ADDRESS          KNX_DEVICE_ADDRESS(1, 2, 0)
 #define KNX_CONFIG_DEVICE_HARDWARE         0u
@@ -181,7 +181,7 @@ void send_routing_indication(uint16_t target, uint8_t tpci, uint16_t apci, uint8
 	                 | (KNX_PRIORITY_NORMAL            << KNX_FIELD_CONTROL1_PRIO_OFFSET)
 	                 | (0u                             << KNX_FIELD_CONTROL1_CONFIRM_OFFSET));                  /* control field */
 	set_u08(&buf[ 9u], (1u                             << KNX_FIELD_CONTROL2_DESTTYPE_OFFSET)
-	                 | (KNX_ROUTING_COUNTER            << KNX_FIELD_CONTROL2_HOPCOUNT_OFFSET)
+	                 | (KNX_FIELD_HOPCOUNT             << KNX_FIELD_CONTROL2_HOPCOUNT_OFFSET)
 	                 | (KNX_EXTFRAME_FORMAT_STD        << KNX_FIELD_CONTROL2_EXTFRAME_OFFSET));     /* Typ Zieladr.(1b); Rout.Zähl.(3b); Ext. Frame Format(4b). */
 	set_u16(&buf[10u], KNX_CONFIG_DEVICE_ADDRESS);  /* source address */
 	set_u16(&buf[12u], target);                     /* target address */
