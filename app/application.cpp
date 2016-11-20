@@ -20,12 +20,6 @@
 #include <libraries/DS18S20/ds18s20.h>
 #include "knx.h"
 
-Timer procTimer;
-int helloCounter = 0;
-
-DS18S20            g_temperature;
-bool               g_network;
-
 #define KNX_GROUPADDRESS_TEMPERATURE KNX_GROUP_ADDRESS(3,1,0)
 
 #ifndef MQTT_HOST
@@ -48,6 +42,9 @@ bool               g_network;
 void on_mqtt_message(String topic, String message);
 void on_mqtt_complete(TcpClient& client, bool flag);
 
+Timer      g_timer;
+DS18S20    g_temperature;
+bool       g_network;
 MqttClient g_mqtt(MQTT_HOST, MQTT_PORT, on_mqtt_message);
 String     g_topic;
 
@@ -62,7 +59,19 @@ void mqtt_connect()
     }
 }
 
-void networkOk()
+void send_temperature(float val)
+{
+    if (g_network) {
+        if isnan(val) {
+            g_mqtt.publish(g_topic, "UNDEF");
+        } else {
+            g_mqtt.publish(g_topic, String(val));
+        }
+        knx_send_group_write_f16(KNX_GROUPADDRESS_TEMPERATURE, val);
+    }
+}
+
+void on_network_ok()
 {
     Serial.println("Connected to wifi");
     Serial.print("IP: ");
@@ -72,20 +81,17 @@ void networkOk()
     Serial.println(WifiStation.getNetworkGateway().toString());
 
     knx_init();
-
-
     g_network = true;
 }
 
-
-void sayHello()
+void on_timer_event()
 {
     Serial.print(" Time : ");
     Serial.println(micros());
     Serial.println();
 
     if (g_mqtt.getConnectionState() != eTCS_Connected) {
-        mqtt_connect(); // Auto reconnect
+        mqtt_connect();
     }
 
     float temparature;
@@ -100,19 +106,8 @@ void sayHello()
             temparature = NAN;
             Serial.printf("Measurement failed \r\n");
         }
-
-        if (g_network) {
-            knx_send_group_write_f16(KNX_GROUPADDRESS_TEMPERATURE, temparature);
-
-            if isnan(temparature) {
-                g_mqtt.publish(g_topic, "UNDEF");
-            } else {
-                g_mqtt.publish(g_topic, String(temparature));
-            }
-        }
-
+        send_temperature(temparature);
         g_temperature.StartMeasure();
-
     }
 
 }
@@ -139,9 +134,9 @@ void init()
 
 	WifiStation.config(WLAN_SSID, WLAN_SECRET);
 	Serial.println("Connecting to wifi...");
-	WifiStation.waitConnection(networkOk);
+	WifiStation.waitConnection(on_network_ok);
 
-	procTimer.initializeMs(2000, sayHello).start();
+	g_timer.initializeMs(2000, on_timer_event).start();
 	g_temperature.Init(2);
 	g_temperature.StartMeasure();
 }
