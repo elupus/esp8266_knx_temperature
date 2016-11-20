@@ -24,8 +24,43 @@ Timer procTimer;
 int helloCounter = 0;
 
 DS18S20            g_temperature;
+bool               g_network;
 
 #define KNX_GROUPADDRESS_TEMPERATURE KNX_GROUP_ADDRESS(3,1,0)
+
+#ifndef MQTT_HOST
+#define MQTT_HOST "192.168.3.117"
+#endif
+
+#ifndef MQTT_PORT
+#define MQTT_PORT 1883
+#endif
+
+#ifndef MQTT_USER
+#define MQTT_USER ""
+#endif
+
+#ifndef MQTT_PASS
+#define MQTT_PASS ""
+#endif
+
+
+void on_mqtt_message(String topic, String message);
+void on_mqtt_complete(TcpClient& client, bool flag);
+
+MqttClient g_mqtt(MQTT_HOST, MQTT_PORT, on_mqtt_message);
+String     g_topic;
+
+void mqtt_connect()
+{
+    g_mqtt.setCompleteDelegate(on_mqtt_complete);
+    g_mqtt.setWill(g_topic, "UNDEF", 0, false);
+    if (strlen(MQTT_USER) == 0u) {
+        g_mqtt.connect("esp8266");
+    } else {
+        g_mqtt.connect("esp8266", MQTT_USER, MQTT_PASS);
+    }
+}
 
 void networkOk()
 {
@@ -37,6 +72,9 @@ void networkOk()
     Serial.println(WifiStation.getNetworkGateway().toString());
 
     knx_init();
+
+
+    g_network = true;
 }
 
 
@@ -46,23 +84,56 @@ void sayHello()
     Serial.println(micros());
     Serial.println();
 
-    float temparature;
-    if (g_temperature.MeasureStatus()) {
-        temparature = g_temperature.GetCelsius(0);
-        Serial.printf("Measurement %f \r\n", temparature);
-        g_temperature.StartMeasure();
-    } else {
-        temparature = NAN;
-        Serial.printf("Measurement failed \r\n");
+    if (g_mqtt.getConnectionState() != eTCS_Connected) {
+        mqtt_connect(); // Auto reconnect
     }
 
-    knx_send_group_write_f16(KNX_GROUPADDRESS_TEMPERATURE, temparature);
+    float temparature;
+    if (g_temperature.MeasureStatus()) {
+        Serial.printf("Measurement in progress \r\n");
+    } else {
+
+        if (g_temperature.IsValidTemperature(0)) {
+            temparature = g_temperature.GetCelsius(0);
+            Serial.printf("Measurement %f \r\n", temparature);
+        } else {
+            temparature = NAN;
+            Serial.printf("Measurement failed \r\n");
+        }
+
+        if (g_network) {
+            knx_send_group_write_f16(KNX_GROUPADDRESS_TEMPERATURE, temparature);
+
+            if isnan(temparature) {
+                g_mqtt.publish(g_topic, "UNDEF");
+            } else {
+                g_mqtt.publish(g_topic, String(temparature));
+            }
+        }
+
+        g_temperature.StartMeasure();
+
+    }
+
+}
+
+void on_mqtt_message(String topic, String message)
+{
+    Serial.printf("MQTT [%s]:%s\r\n", topic.c_str(), message.c_str());
+}
+
+void on_mqtt_complete(TcpClient& client, bool flag)
+{
+    Serial.printf("MQTT complete: %d\r\n", flag);
 }
 
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
 	Serial.systemDebugOutput(true);
+
+	g_topic  = "temperature/";
+	g_topic  += WifiStation.getMAC();
 
 	WifiAccessPoint.enable(false);
 
