@@ -22,3 +22,6 @@ include $(SMING_HOME)/Makefile-rboot.mk
 else
 include $(SMING_HOME)/Makefile-project.mk
 endif
+
+LIBS += -lstdc++
+
