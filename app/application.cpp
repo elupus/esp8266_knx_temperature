@@ -132,7 +132,7 @@ void init()
 
 	WifiAccessPoint.enable(false);
 
-	WifiStation.config(WLAN_SSID, WLAN_SECRET);
+	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	Serial.println("Connecting to wifi...");
 	WifiStation.waitConnection(on_network_ok);
 
